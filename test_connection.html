@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastRTC Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FastRTC Backend Connection Test</h1>
+        
+        <div class="test-section">
+            <h3>1. Health Check</h3>
+            <button onclick="testHealth()">Test Health Endpoint</button>
+            <div id="health-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Statistics</h3>
+            <button onclick="testStats()">Test Stats Endpoint</button>
+            <div id="stats-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. WebRTC Offer</h3>
+            <button onclick="testWebRTCOffer()">Test WebRTC Offer</button>
+            <div id="webrtc-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. WebSocket Connection</h3>
+            <button onclick="testWebSocket()">Test WebSocket</button>
+            <div id="websocket-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. FastRTC Streams</h3>
+            <button onclick="testFastRTCStreams()">Test FastRTC Streams</button>
+            <div id="fastrtc-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:8000';
+        const WS_URL = 'ws://localhost:8000';
+
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <span class="success">✅ Health check passed!</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="error">❌ Health check failed: ${response.status}</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="error">❌ Health check error: ${error.message}</span>
+                `;
+            }
+        }
+
+        async function testStats() {
+            const resultDiv = document.getElementById('stats-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/stats`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <span class="success">✅ Stats endpoint working!</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="error">❌ Stats endpoint failed: ${response.status}</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="error">❌ Stats endpoint error: ${error.message}</span>
+                `;
+            }
+        }
+
+        async function testWebRTCOffer() {
+            const resultDiv = document.getElementById('webrtc-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const offerData = {
+                    sdp: "v=0\r\no=- 1234567890 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE audio\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\nc=IN IP4 0.0.0.0\r\na=mid:audio\r\na=sendrecv\r\na=rtpmap:111 opus/48000/2\r\na=fmtp:111 minptime=10;useinbandfec=1\r\n",
+                    modality: "audio",
+                    mode: "send"
+                };
+
+                const response = await fetch(`${BACKEND_URL}/webrtc/offer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(offerData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    resultDiv.innerHTML = `
+                        <span class="success">✅ WebRTC offer accepted!</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="error">❌ WebRTC offer failed: ${data.status}</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="error">❌ WebRTC offer error: ${error.message}</span>
+                `;
+            }
+        }
+
+        function testWebSocket() {
+            const resultDiv = document.getElementById('websocket-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const clientId = 'test-client-' + Date.now();
+                const ws = new WebSocket(`${WS_URL}/ws/audio/${clientId}`);
+                
+                ws.onopen = function() {
+                    resultDiv.innerHTML = '<span class="success">✅ WebSocket connected!</span>';
+                    
+                    // Send a ping message
+                    const pingMessage = {
+                        type: 'ping',
+                        timestamp: new Date().toISOString()
+                    };
+                    ws.send(JSON.stringify(pingMessage));
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    resultDiv.innerHTML = `
+                        <span class="success">✅ WebSocket message received!</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    ws.close();
+                };
+                
+                ws.onerror = function(error) {
+                    resultDiv.innerHTML = `
+                        <span class="error">❌ WebSocket error: ${error}</span>
+                    `;
+                };
+                
+                ws.onclose = function() {
+                    resultDiv.innerHTML += '<br><span class="info">WebSocket closed</span>';
+                };
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="error">❌ WebSocket error: ${error.message}</span>
+                `;
+            }
+        }
+
+        async function testFastRTCStreams() {
+            const resultDiv = document.getElementById('fastrtc-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/fastrtc/streams`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <span class="success">✅ FastRTC streams endpoint working!</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <span class="error">❌ FastRTC streams failed: ${response.status}</span>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <span class="error">❌ FastRTC streams error: ${error.message}</span>
+                `;
+            }
+        }
+    </script>
+</body>
+</html> 
